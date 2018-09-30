@@ -1,2 +1,2 @@
-# RealTime-CUDA
+# RealTimeVideoProcessing
 Realtime image processing
