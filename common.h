@@ -51,7 +51,7 @@ GLuint common_get_shader_program(
     glCompileShader(vertex_shader);
     glGetShaderiv(vertex_shader, GL_COMPILE_STATUS, &success);
     glGetShaderiv(vertex_shader, GL_INFO_LOG_LENGTH, &log_length);
-    log = malloc(log_length);
+    log = (GLchar*) malloc(log_length);
     if (log_length > 0) {
         glGetShaderInfoLog(vertex_shader, log_length, NULL, log);
         printf("vertex shader log:\n\n%s\n", log);
@@ -68,7 +68,7 @@ GLuint common_get_shader_program(
     glGetShaderiv(fragment_shader, GL_COMPILE_STATUS, &success);
     glGetShaderiv(fragment_shader, GL_INFO_LOG_LENGTH, &log_length);
     if (log_length > 0) {
-        log = realloc(log, log_length);
+        log = (GLchar*) realloc(log, log_length);
         glGetShaderInfoLog(fragment_shader, log_length, NULL, log);
         printf("fragment shader log:\n\n%s\n", log);
     }
@@ -85,7 +85,7 @@ GLuint common_get_shader_program(
     glGetProgramiv(program, GL_LINK_STATUS, &success);
     glGetProgramiv(program, GL_INFO_LOG_LENGTH, &log_length);
     if (log_length > 0) {
-        log = realloc(log, log_length);
+        log = (GLchar*) realloc(log, log_length);
         glGetProgramInfoLog(program, log_length, NULL, log);
         printf("shader link log:\n\n%s\n", log);
     }
@@ -112,7 +112,7 @@ GLuint common_get_compute_program(const char *source) {
     glCompileShader(shader);
     glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
     glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &log_length);
-    log = malloc(log_length);
+    log = (GLchar*) malloc(log_length);
     if (log_length > 0) {
         glGetShaderInfoLog(shader, log_length, NULL, log);
         printf("shader log:\n\n%s\n", log);
@@ -129,7 +129,7 @@ GLuint common_get_compute_program(const char *source) {
     glGetProgramiv(program, GL_LINK_STATUS, &success);
     glGetProgramiv(program, GL_INFO_LOG_LENGTH, &log_length);
     if (log_length > 0) {
-        log = realloc(log, log_length);
+        log = (GLchar*) realloc(log, log_length);
         glGetProgramInfoLog(program, log_length, NULL, log);
         printf("shader link log:\n\n%s\n", log);
     }

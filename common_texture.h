@@ -13,7 +13,7 @@
 unsigned char * common_texture_get_image(unsigned int width, unsigned int height) {
     unsigned char *cur, *image;
     size_t i, j;
-    image = malloc(3 * width * height);
+    image = new unsigned char[3 * width * height];
     for (i = 0; i < width; i++) {
         for (j = 0; j < height; j++) {
             cur = &image[3 * (i * width + j)];

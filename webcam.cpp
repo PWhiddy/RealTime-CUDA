@@ -62,44 +62,6 @@ static const GLchar *fragment_shader_source2 =
     "    uv.x += 0.1*sin(uv.y*20.0);\n"
     "    color = texture(textureSampler, uv ).rgb;\n"
 
-    /*"// Inverter\n"*/
-    /*"    color = 1.0 - texture(textureSampler, fragmentUv.yx ).rgb;\n"*/
-
-    /*"// Swapper\n"*/
-    /*"    color = texture(textureSampler, fragmentUv.yx ).gbr;\n"*/
-
-    /*"// Double vision ortho.\n"*/
-    /*"    color = ("*/
-    /*"        texture(textureSampler, fragmentUv.yx ).rgb +\n"*/
-    /*"        texture(textureSampler, fragmentUv.xy ).rgb\n"*/
-    /*"    ) / 2.0;\n"*/
-
-    /*"// Multi-me.\n"*/
-    /*"    color = texture(textureSampler, 4.0 * fragmentUv.yx ).rgb;\n"*/
-
-    /*"// Horizontal linear blur.\n"*/
-    /*"    int blur_width = 21;\n"*/
-    /*"    int blur_width_half = blur_width / 2;\n"*/
-    /*"    color = vec3(0.0, 0.0, 0.0);\n"*/
-    /*"    for (int i = -blur_width_half; i <= blur_width_half; ++i) {\n"*/
-    /*"       color += texture(textureSampler, vec2(fragmentUv.y + i * pixD.x, fragmentUv.x)).rgb;\n"*/
-    /*"    }\n"*/
-    /*"    color /= blur_width;\n"*/
-
-    /*"// Square linear blur.\n"*/
-    /*
-    "    int blur_width = 23;\n"
-    "    int blur_width_half = blur_width / 2;\n"
-    "    color = vec3(0.0, 0.0, 0.0);\n"
-    "    for (int i = -blur_width_half; i <= blur_width_half; ++i) {\n"
-    "       for (int j = -blur_width_half; j <= blur_width_half; ++j) {\n"
-    "           color += texture(\n"
-    "               textureSampler, fragmentUv.yx + ivec2(i, j) * pixD\n"
-    "           ).rgb;\n"
-    "       }\n"
-    "    }\n"
-    "    color /= (blur_width * blur_width);\n"
-    */
     "}\n";
 
 int main(int argc, char **argv) {
@@ -154,7 +116,7 @@ int main(int argc, char **argv) {
     window = glfwCreateWindow(2 * width, height, __FILE__, NULL, NULL);
     glfwMakeContextCurrent(window);
     glewInit();
-    CommonV4l2_init(&common_v4l2, COMMON_V4L2_DEVICE, width, height);
+    CommonV4l2_init(&common_v4l2, (char*) COMMON_V4L2_DEVICE, width, height);
 
     /* Shader setup. */
     program = common_get_shader_program(vertex_shader_source, fragment_shader_source);
@@ -226,7 +188,7 @@ int main(int argc, char **argv) {
         /* Blocks until an image is available, thus capping FPS to that.
          * 30FPS is common in cheap webcams. */
         CommonV4l2_updateImage(&common_v4l2);
-        image = CommonV4l2_getImage(&common_v4l2);
+        image = (uint8_t*) CommonV4l2_getImage(&common_v4l2);
         glClear(GL_COLOR_BUFFER_BIT);
 
         /* Original. */
@@ -239,54 +201,6 @@ int main(int argc, char **argv) {
         glBindVertexArray(vao);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
         glBindVertexArray(0);
-
-        if (cpu) {
-            image2 = realloc(image2, 3 * width * height * sizeof(image2[0]));
-            for (unsigned int i = 0; i < height; ++i) {
-                for (unsigned int j = 0; j < width; ++j) {
-                    size_t index = 3 * (i * width + j);
-
-                    /* Inverter. */
-                    /*image2[index + 0] = 1.0 - (image[index + 0] / 255.0);*/
-                    /*image2[index + 1] = 1.0 - (image[index + 1] / 255.0);*/
-                    /*image2[index + 2] = 1.0 - (image[index + 2] / 255.0);*/
-
-                    /* Swapper. */
-                    /*image2[index + 0] = image[index + 1] / 255.0;*/
-                    /*image2[index + 1] = image[index + 2] / 255.0;*/
-                    /*image2[index + 2] = image[index + 0] / 255.0;*/
-
-                    /* Square linear blur. */
-                    int blur_width = 5;
-                    int blur_width_half = blur_width / 2;
-                    int blur_width2 = (blur_width * blur_width);
-                    image2[index + 0] = 0.0;
-                    image2[index + 1] = 0.0;
-                    image2[index + 2] = 0.0;
-                    for (int k = -blur_width_half; k <= blur_width_half; ++k) {
-                        for (int l = -blur_width_half; l <= blur_width_half; ++l) {
-                            int i2 = i + k;
-                            int j2 = j + l;
-                            // Out of bounds is black. TODO: do module to match shader exactly. 
-                            if (i2 > 0 && i2 < (int)height && j2 > 0 && j2 < (int)width) {
-                                unsigned int srcIndex = index + 3 * (k * width + l);
-                                image2[index + 0] += image[srcIndex + 0];
-                                image2[index + 1] += image[srcIndex + 1];
-                                image2[index + 2] += image[srcIndex + 2];
-                            }
-                        }
-                    }
-                    image2[index + 0] /= (blur_width2 * 255.0);
-                    image2[index + 1] /= (blur_width2 * 255.0);
-                    image2[index + 2] /= (blur_width2 * 255.0);
-                }
-            }
-            glTexImage2D(
-                GL_TEXTURE_2D, 0, GL_RGB, width, height,
-                0, GL_RGB, GL_FLOAT, image2
-            );
-        }
-
         /* Modified. */
         glUseProgram(program2);
         glUniform1i(textureSampler_location2, 0);
@@ -301,9 +215,6 @@ int main(int argc, char **argv) {
     } while (!glfwWindowShouldClose(window));
 
     /* Cleanup. */
-    if (cpu) {
-        free(image2);
-    }
     CommonV4l2_deinit(&common_v4l2);
     glDeleteBuffers(1, &vbo);
     glDeleteVertexArrays(1, &vao);
